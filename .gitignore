@@ -1,0 +1,38 @@
+# IDE-specific files
+.idea/
+.vscode/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Go build artifacts
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go vendor directory (if not using Go modules)
+vendor/
+
+# Dependency directories (if not using Go modules)
+Godeps/
+
+# Test binary
+*.test
+
+# Coverage files
+*.out
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# GoLand run configurations
+*.iml

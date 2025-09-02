@@ -46,6 +46,7 @@ func run() int {
 	table := global.String("table", "schema_migrations", "Migrations table name")
 	embedded := global.Bool("embedded", false, "Use embedded FS (examples/embedded) [library usage]")
 	appliedBy := global.String("applied-by", "", "Override applied_by value")
+	verbose := global.Bool("verbose", false, "Verbose per-migration logs")
 
 	// Subcommands
 	switch cmd {
@@ -170,12 +171,55 @@ func run() int {
 			log.Info("no pending migrations", nil)
 			return exitOK
 		}
-		applied, err := run.ApplyUp(ctx, plan.Pending, cfg.DryRun)
+		// If verbose, list the plan
+		if *verbose {
+			for _, fp := range plan.Pending {
+				log.Info("plan.apply", map[string]any{
+					"version":  fp.Version,
+					"name":     fp.Name,
+					"checksum": fp.Checksum,
+				})
+			}
+		}
+
+		// Progress callback
+		progress := func(stage string, fp migrator.FilePair, row *migrator.Row, err error) {
+			if !*verbose {
+				return
+			}
+			fields := map[string]any{
+				"version": fp.Version,
+				"name":    fp.Name,
+			}
+			if row != nil {
+				fields["order"] = row.ExecutionOrder
+			}
+			if err != nil {
+				fields["error"] = err.Error()
+			}
+			switch stage {
+			case "start":
+				log.Info("migrate.start", fields)
+			case "success":
+				if row != nil {
+					fields["duration_ms"] = row.DurationMS
+				}
+				log.Info("migrate.success", fields)
+			case "error":
+				log.Error("migrate.error", fields)
+			}
+		}
+
+		applied, err := run.ApplyUp(ctx, plan.Pending, cfg.DryRun, progress)
 		if err != nil {
 			log.Error("up failed", map[string]any{"error": err.Error()})
 			return exitFail
 		}
-		log.Info("up complete", map[string]any{"applied": len(applied), "dry_run": cfg.DryRun})
+
+		log.Info("up complete", map[string]any{
+			"applied": len(applied),
+			"dry_run": cfg.DryRun,
+		})
 		return exitOK
 	case "down":
 		arg := os.Args[2]

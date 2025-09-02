@@ -44,7 +44,7 @@ func (r *Runner) Ensure(ctx context.Context) error {
 	return nil
 }
 
-func (r *Runner) ApplyUp(ctx context.Context, files []FilePair, dryRun bool) ([]Row, error) {
+func (r *Runner) ApplyUp(ctx context.Context, files []FilePair, dryRun bool, progress func(stage string, fp FilePair, row *Row, err error)) ([]Row, error) {
 	applied := make([]Row, 0, len(files))
 	maxOrder, err := r.Storage.MaxExecutionOrder(ctx)
 	if err != nil {
@@ -61,32 +61,62 @@ func (r *Runner) ApplyUp(ctx context.Context, files []FilePair, dryRun bool) ([]
 			Status:         "success",
 			ExecutionOrder: maxOrder,
 		}
+
+		// progress: start
+		if progress != nil {
+			progress("start", fp, &row, nil)
+		}
+
 		if dryRun {
+			if progress != nil {
+				progress("success", fp, &row, nil)
+			}
 			applied = append(applied, row)
 			continue
 		}
+
 		start := time.Now()
 		tx, err := r.DB.BeginTx(ctx, nil)
 		if err != nil {
+			if progress != nil {
+				progress("error", fp, &row, err)
+			}
 			return nil, err
 		}
-		// NOTE: Requires multiStatements=true in DSN
+
+		// NOTE: DSN must include multiStatements=true if file has multiple statements
 		if _, err := tx.ExecContext(ctx, string(fp.UpBytes)); err != nil {
 			_ = tx.Rollback()
 			row.Status = "failed"
 			row.DurationMS = time.Since(start).Milliseconds()
 			_ = r.Storage.Upsert(ctx, row)
+			if progress != nil {
+				progress("error", fp, &row, err)
+			}
 			return applied, fmt.Errorf("migration %s:%s failed: %w", fp.Version, fp.Name, err)
 		}
+
 		if err := tx.Commit(); err != nil {
 			row.Status = "failed"
 			row.DurationMS = time.Since(start).Milliseconds()
 			_ = r.Storage.Upsert(ctx, row)
+			if progress != nil {
+				progress("error", fp, &row, err)
+			}
 			return applied, err
 		}
+
 		row.DurationMS = time.Since(start).Milliseconds()
 		if err := r.Storage.Upsert(ctx, row); err != nil {
+			if progress != nil {
+				progress("error", fp, &row, err)
+			}
 			return applied, err
+		}
+
+		// progress: success
+		if progress != nil {
+			progress("success", fp, &row, nil)
 		}
 		applied = append(applied, row)
 	}

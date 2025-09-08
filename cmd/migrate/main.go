@@ -164,6 +164,42 @@ func run() int {
 
 	switch cmd {
 	case "status":
+		if *verbose {
+			// Applied map is in plan.Applied
+			appliedCount := 0
+			for _, row := range plan.Applied {
+				appliedCount++
+				log.Info("status.applied", map[string]any{
+					"version":         row.Version,
+					"name":            row.Name,
+					"checksum":        row.Checksum,
+					"status":          row.Status,
+					"applied_at":      row.AppliedAt.UTC().Format(time.RFC3339),
+					"applied_by":      row.AppliedBy,
+					"duration_ms":     row.DurationMS,
+					"execution_order": row.ExecutionOrder,
+				})
+			}
+			pendingCount := 0
+			for _, fp := range plan.All {
+				k := fp.Version + ":" + fp.Name
+				if _, ok := plan.Applied[k]; !ok {
+					pendingCount++
+					log.Info("status.pending", map[string]any{
+						"version":  fp.Version,
+						"name":     fp.Name,
+						"checksum": fp.Checksum,
+					})
+				}
+			}
+			log.Info("status.summary", map[string]any{
+				"applied": appliedCount,
+				"pending": pendingCount,
+			})
+			return exitOK
+		}
+
+		// Default (non-verbose) status behavior you already had:
 		printStatus(plan, log)
 		return exitOK
 	case "up":
@@ -223,14 +259,15 @@ func run() int {
 		return exitOK
 	case "down":
 		arg := os.Args[2]
+
 		var rows []migrator.Row
+		var err error
 		if strings.ToLower(arg) == "all" {
-			// fetch all applied
-			rows, err = run.LastApplied(ctx, 999999999) // effectively all
+			rows, err = run.LastApplied(ctx, 999999999) // all
 		} else {
-			n, err := strconv.Atoi(arg)
-			if err != nil || n <= 0 {
-				log.Error("invalid N for down, please input valid number or 'all'", map[string]any{"arg": arg})
+			n, convErr := strconv.Atoi(arg)
+			if convErr != nil || n <= 0 {
+				log.Error("invalid N for down", map[string]any{"arg": arg})
 				return exitPlanError
 			}
 			rows, err = run.LastApplied(ctx, n)
@@ -243,14 +280,55 @@ func run() int {
 			log.Info("nothing to roll back", nil)
 			return exitOK
 		}
+
+		// Build lookup for down SQL
 		lookup := map[string]migrator.FilePair{}
 		for _, fp := range plan.All {
 			lookup[fp.Version+":"+fp.Name] = fp
 		}
-		if err := run.ApplyDown(ctx, rows, lookup, cfg.DryRun); err != nil {
+
+		// Verbose plan list
+		if *verbose {
+			for _, r := range rows {
+				log.Info("plan.rollback", map[string]any{
+					"version": r.Version,
+					"name":    r.Name,
+					"order":   r.ExecutionOrder,
+					"status":  r.Status,
+				})
+			}
+		}
+
+		// Progress callback
+		progress := func(stage string, fp migrator.FilePair, row *migrator.Row, err error) {
+			if !*verbose {
+				return
+			}
+			fields := map[string]any{
+				"version": fp.Version,
+				"name":    fp.Name,
+			}
+			if row != nil {
+				fields["order"] = row.ExecutionOrder
+			}
+			if err != nil {
+				fields["error"] = err.Error()
+			}
+			switch stage {
+			case "start":
+				log.Info("migrate.down.start", fields)
+			case "success":
+				log.Info("migrate.down.success", fields)
+			case "error":
+				log.Error("migrate.down.error", fields)
+			}
+		}
+
+		if err := run.ApplyDown(ctx, rows, lookup, cfg.DryRun, progress); err != nil {
 			log.Error("down failed", map[string]any{"error": err.Error()})
 			return exitFail
 		}
+
 		log.Info("down complete", map[string]any{"reverted": len(rows), "dry_run": cfg.DryRun})
 		return exitOK
 	case "repair":
@@ -300,6 +378,7 @@ GLOBAL FLAGS:
   --table <name>            Migrations table (default schema_migrations)
   --config <path>           Optional YAML config path
   --applied-by <name>       Override applied_by
+  --verbose       	    Verbose per-migration logs
 
 EXAMPLES:
   migrate up --dsn "$DSN" --dir ./migrations
@@ -307,8 +386,7 @@ EXAMPLES:
   migrate status --dsn "$DSN" --dir ./migrations --json
   migrate create add_user_table --dir ./migrations
   migrate repair --dsn "$DSN" --dir ./migrations --yes
-  migrate force 20250825010101 --dsn "$DSN" --dir ./migrations --fake
-`)
+  migrate force 20250825010101 --dsn "$DSN" --dir ./migrations --fake`)
 }
 
 func hasFlag(name string) bool {

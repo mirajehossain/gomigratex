@@ -123,29 +123,57 @@ func (r *Runner) ApplyUp(ctx context.Context, files []FilePair, dryRun bool, pro
 	return applied, nil
 }
 
-func (r *Runner) ApplyDown(ctx context.Context, toRevert []Row, lookup map[string]FilePair, dryRun bool) error {
+func (r *Runner) ApplyDown(ctx context.Context, toRevert []Row, lookup map[string]FilePair, dryRun bool, progress func(stage string, fp FilePair, row *Row, err error)) error {
 	for _, row := range toRevert {
 		fp, ok := lookup[row.Version+":"+row.Name]
 		if !ok {
+			if progress != nil {
+				progress("error", FilePair{Version: row.Version, Name: row.Name}, &row, fmt.Errorf("missing down file"))
+			}
 			return fmt.Errorf("missing down file for %s:%s", row.Version, row.Name)
 		}
+
+		if progress != nil {
+			progress("start", fp, &row, nil)
+		}
+
 		if dryRun {
+			if progress != nil {
+				progress("success", fp, &row, nil)
+			}
 			continue
 		}
+
 		tx, err := r.DB.BeginTx(ctx, nil)
 		if err != nil {
+			if progress != nil {
+				progress("error", fp, &row, err)
+			}
 			return err
 		}
 		if _, err := tx.ExecContext(ctx, string(fp.DownBytes)); err != nil {
 			_ = tx.Rollback()
+			if progress != nil {
+				progress("error", fp, &row, err)
+			}
 			return fmt.Errorf("down migration %s:%s failed: %w", row.Version, row.Name, err)
 		}
 		if err := tx.Commit(); err != nil {
+			if progress != nil {
+				progress("error", fp, &row, err)
+			}
 			return err
 		}
-		// Remove record to indicate "not applied"
+
 		if err := r.Storage.Delete(ctx, row.Version, row.Name); err != nil {
+			if progress != nil {
+				progress("error", fp, &row, err)
+			}
 			return err
+		}
+
+		if progress != nil {
+			progress("success", fp, &row, nil)
 		}
 	}
 	return nil

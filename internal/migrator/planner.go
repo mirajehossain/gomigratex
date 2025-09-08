@@ -88,7 +88,7 @@ func DiscoverAndPlan(ctx context.Context, src FileSource, st *Storage) (*Plan, e
 	}
 	pending := make([]FilePair, 0, len(all))
 	for _, fp := range all {
-		k := fp.Version + ":" + fp.Name
+		k := Key(fp.Version, fp.Name)
 		if row, ok := applied[k]; ok {
 			// If recorded success but checksum differs => drift
 			if row.Status == "success" && !strings.EqualFold(row.Checksum, fp.Checksum) {

@@ -6,16 +6,17 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/mirajehossain/gomigratex/internal/config"
-	"github.com/mirajehossain/gomigratex/internal/db"
-	"github.com/mirajehossain/gomigratex/internal/lock"
-	"github.com/mirajehossain/gomigratex/internal/logger"
-	"github.com/mirajehossain/gomigratex/internal/migrator"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/mirajehossain/gomigratex/internal/config"
+	"github.com/mirajehossain/gomigratex/internal/db"
+	"github.com/mirajehossain/gomigratex/internal/lock"
+	"github.com/mirajehossain/gomigratex/internal/logger"
+	"github.com/mirajehossain/gomigratex/internal/migrator"
 )
 
 const (
@@ -182,7 +183,7 @@ func run() int {
 			}
 			pendingCount := 0
 			for _, fp := range plan.All {
-				k := fp.Version + ":" + fp.Name
+				k := migrator.Key(fp.Version, fp.Name)
 				if _, ok := plan.Applied[k]; !ok {
 					pendingCount++
 					log.Info("status.pending", map[string]any{
@@ -284,7 +285,7 @@ func run() int {
 		// Build lookup for down SQL
 		lookup := map[string]migrator.FilePair{}
 		for _, fp := range plan.All {
-			lookup[fp.Version+":"+fp.Name] = fp
+			lookup[migrator.Key(fp.Version, fp.Name)] = fp
 		}
 
 		// Verbose plan list
@@ -407,7 +408,7 @@ func printStatus(plan *migrator.Plan, log *logger.Logger) {
 	}
 	var out []item
 	for _, fp := range plan.All {
-		k := fp.Version + ":" + fp.Name
+		k := migrator.Key(fp.Version, fp.Name)
 		if row, ok := plan.Applied[k]; ok {
 			out = append(out, item{Version: fp.Version, Name: fp.Name, Checksum: fp.Checksum, Status: row.Status})
 		} else {
@@ -416,7 +417,7 @@ func printStatus(plan *migrator.Plan, log *logger.Logger) {
 	}
 	if log != nil {
 		// print as table-ish if not JSON
-		if !logJsonEnabled(log) {
+		if !log.JSONEnabled() {
 			for _, it := range out {
 				fmt.Printf("%s %-30s %-8s %s\n", it.Version, it.Name, it.Status, it.Checksum[:12])
 			}
@@ -427,13 +428,7 @@ func printStatus(plan *migrator.Plan, log *logger.Logger) {
 	}
 }
 
-func logJsonEnabled(l *logger.Logger) bool {
-	// terrible hack: reflect not allowed; just re-create a JSON print
-	// We'll infer json mode by printing a sample. But we won't do that here.
-	// Assume JSON when env var set; but we don't have direct access.
-	// Instead, we inspect GOMIGRATEX_JSON flag:
-	return os.Getenv("GOMIGRATEX_JSON") == "1"
-}
+// deprecated: logJsonEnabled hack removed; use log.JSONEnabled()
 
 func createPair(dir, name string, log *logger.Logger) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -465,7 +460,7 @@ func sanitize(s string) string {
 func repairChecksums(plan *migrator.Plan, run *migrator.Runner, dry bool) (int, error) {
 	changed := 0
 	for _, fp := range plan.All {
-		k := fp.Version + ":" + fp.Name
+		k := migrator.Key(fp.Version, fp.Name)
 		row, ok := plan.Applied[k]
 		if !ok {
 			continue // pending; nothing to repair

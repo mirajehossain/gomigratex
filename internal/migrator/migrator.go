@@ -3,7 +3,6 @@ package migrator
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"os/user"
 	"strings"
@@ -195,8 +194,6 @@ func (r *Runner) LastApplied(ctx context.Context, n int) ([]Row, error) {
 	}
 	return out, rows.Err()
 }
-
-var ErrNoSuchVersion = errors.New("no such version")
 
 func (r *Runner) ForceBaseline(ctx context.Context, all []FilePair, version string, fake bool) ([]Row, error) {
 	applied := make([]Row, 0)

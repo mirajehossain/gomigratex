@@ -43,3 +43,6 @@ func (l *Logger) log(level string, msg string, fields map[string]any) {
 func (l *Logger) Info(msg string, fields map[string]any)  { l.log("INFO", msg, fields) }
 func (l *Logger) Warn(msg string, fields map[string]any)  { l.log("WARN", msg, fields) }
 func (l *Logger) Error(msg string, fields map[string]any) { l.log("ERROR", msg, fields) }
+
+// JSONEnabled reports whether this logger is configured to emit JSON output.
+func (l *Logger) JSONEnabled() bool { return l.json }

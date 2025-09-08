@@ -12,3 +12,8 @@ type Row struct {
 	Status         string // success | failed
 	ExecutionOrder int64
 }
+
+// Key builds the canonical compound key for a migration identity.
+func Key(version string, name string) string {
+	return version + ":" + name
+}

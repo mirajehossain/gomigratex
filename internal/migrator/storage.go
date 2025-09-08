@@ -23,18 +23,18 @@ func (s *Storage) GetAll(ctx context.Context) (map[string]Row, error) {
 		if err := rows.Scan(&r.Version, &r.Name, &r.Checksum, &r.AppliedAt, &r.AppliedBy, &r.DurationMS, &r.Status, &r.ExecutionOrder); err != nil {
 			return nil, err
 		}
-		out[keyOf(r.Version, r.Name)] = r
+		out[Key(r.Version, r.Name)] = r
 	}
 	return out, rows.Err()
 }
 
 func (s *Storage) MaxExecutionOrder(ctx context.Context) (int64, error) {
 	row := s.DB.QueryRowContext(ctx, fmt.Sprintf(`SELECT COALESCE(MAX(execution_order), 0) FROM %s`, s.Table))
-	var max int64
-	if err := row.Scan(&max); err != nil {
+	var maxOrder int64
+	if err := row.Scan(&maxOrder); err != nil {
 		return 0, err
 	}
-	return max, nil
+	return maxOrder, nil
 }
 
 func (s *Storage) Upsert(ctx context.Context, r Row) error {
@@ -52,5 +52,3 @@ func (s *Storage) Delete(ctx context.Context, version, name string) error {
 	_, err := s.DB.ExecContext(ctx, fmt.Sprintf(`DELETE FROM %s WHERE version=? AND name=?`, s.Table), version, name)
 	return err
 }
-
-func keyOf(version, name string) string { return version + ":" + name }

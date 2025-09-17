@@ -20,16 +20,16 @@ A lightweight, production-ready MySQL migration tool for Go applications. Suppor
 
 **Install Latest Version:**
 ```bash
-go install github.com/mirajehossain/gomigratex/cmd/migrate@latest
+go install github.com/mirajehossain/gomigratex/cmd/migratex@latest
 ```
 
 **Install Specific Version:**
 ```bash
 # Install a specific release version
-go install github.com/mirajehossain/gomigratex/cmd/migrate@v1.0.0
+go install github.com/mirajehossain/gomigratex/cmd/migratex@v1.0.0
 
 # Install a specific commit
-go install github.com/mirajehossain/gomigratex/cmd/migrate@abc1234
+go install github.com/mirajehossain/gomigratex/cmd/migratex@abc1234
 ```
 
 **Verify Installation:**
@@ -351,7 +351,7 @@ You can see all available versions on the [GitHub Releases](https://github.com/m
 **CLI Installation:**
 ```bash
 # Latest stable release
-go install github.com/mirajehossain/gomigratex/cmd/migrate@latest
+go install github.com/mirajehossain/gomigratex/cmd/migratex@latest
 
 # Specific version
 go install github.com/mirajehossain/gomigratex/cmd/migrate@v1.2.0

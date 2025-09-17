@@ -86,7 +86,7 @@ go test -cover ./...
 
 ```bash
 # Build the CLI
-go build -o migratex ./cmd/migrate
+go build -o migratex ./cmd/migratex
 
 # Test with sample migrations
 ./migratex create test_migration --dir ./test-migrations

@@ -10,7 +10,7 @@
 # Project settings
 BINARY_NAME := migratex
 MODULE_NAME := github.com/mirajehossain/gomigratex
-CMD_PATH := ./cmd/migrate
+CMD_PATH := ./cmd/migratex
 
 # Database settings for testing
 DB_HOST := 127.0.0.1

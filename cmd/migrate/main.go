@@ -27,6 +27,13 @@ const (
 	exitPlanError = 5
 )
 
+// Build information - set via ldflags
+var (
+	Version   = "dev"
+	BuildTime = "unknown"
+	GitCommit = "unknown"
+)
+
 func main() {
 	os.Exit(run())
 }
@@ -36,7 +43,14 @@ func run() int {
 		usage()
 		return exitOK
 	}
+
 	cmd := os.Args[1]
+
+	// Handle version command
+	if cmd == "version" || cmd == "--version" || cmd == "-v" {
+		printVersion()
+		return exitOK
+	}
 	global := flag.NewFlagSet("global", flag.ContinueOnError)
 	dsn := global.String("dsn", "", "Database DSN (or set DB_DSN)")
 	dir := global.String("dir", "./migrations", "Migrations directory (or MIGRATIONS_DIR)")
@@ -369,6 +383,7 @@ COMMANDS:
   create <name>             Scaffold yyyyMMddHHmmss_name.{up,down}.sql
   repair                    Update stored checksums to current files (use after intentional edits)
   force <version> [--fake]  Mark all <= version as applied (baseline); with --fake skip running SQL
+  version                   Show version information
 
 GLOBAL FLAGS:
   --dsn <dsn>               Database DSN (or DB_DSN)
@@ -382,12 +397,19 @@ GLOBAL FLAGS:
   --verbose       	    Verbose per-migration logs
 
 EXAMPLES:
+  migratex version
   migratex up --dsn "$DSN" --dir ./migrations
   migratex down 1 --dsn "$DSN" --dir ./migrations
   migratex status --dsn "$DSN" --dir ./migrations --json
   migratex create add_user_table --dir ./migrations
   migratex repair --dsn "$DSN" --dir ./migrations --yes
   migratex force 20250825010101 --dsn "$DSN" --dir ./migrations --fake`)
+}
+
+func printVersion() {
+	fmt.Printf("gomigratex %s\n", Version)
+	fmt.Printf("Built: %s\n", BuildTime)
+	fmt.Printf("Commit: %s\n", GitCommit)
 }
 
 func hasFlag(name string) bool {

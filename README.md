@@ -34,7 +34,7 @@ go install github.com/mirajehossain/gomigratex/cmd/migrate@abc1234
 
 **Verify Installation:**
 ```bash
-migrate version
+migratex -v
 ```
 
 ### Library
@@ -62,7 +62,7 @@ require github.com/mirajehossain/gomigratex v1.0.0
 
 ### 1. Create Migration Files
 ```bash
-migrate create add_users_table --dir ./migrations
+migratex create add_users_table --dir ./migrations
 ```
 This creates:
 - `20250101120000_add_users_table.up.sql`
@@ -89,13 +89,13 @@ DROP TABLE users;
 export DB_DSN="user:pass@tcp(localhost:3306)/mydb?parseTime=true&multiStatements=true"
 
 # Apply all pending migrations
-migrate up --dsn "$DB_DSN" --dir ./migrations
+migratex up --dsn "$DB_DSN" --dir ./migrations
 
 # Check status
-migrate status --dsn "$DB_DSN" --dir ./migrations
+migratex status --dsn "$DB_DSN" --dir ./migrations
 
 # Rollback last migration
-migrate down 1 --dsn "$DB_DSN" --dir ./migrations
+migratex down 1 --dsn "$DB_DSN" --dir ./migrations
 ```
 
 ## CLI Usage
@@ -127,25 +127,25 @@ migrate down 1 --dsn "$DB_DSN" --dir ./migrations
 
 ```bash
 # Basic usage
-migrate up --dsn "$DB_DSN" --dir ./migrations
+migratex up --dsn "$DB_DSN" --dir ./migrations
 
 # With verbose logging
-migrate up --dsn "$DB_DSN" --dir ./migrations --verbose
+migratex up --dsn "$DB_DSN" --dir ./migrations --verbose
 
 # JSON output for monitoring
-migrate status --dsn "$DB_DSN" --dir ./migrations --json
+migratex status --dsn "$DB_DSN" --dir ./migrations --json
 
 # Dry run to see what would happen
-migrate up --dsn "$DB_DSN" --dir ./migrations --dry-run
+migratex up --dsn "$DB_DSN" --dir ./migrations --dry-run
 
 # Create migration with custom name
-migrate create add_user_indexes --dir ./migrations
+migratex create add_user_indexes --dir ./migrations
 
 # Rollback all migrations
-migrate down all --dsn "$DB_DSN" --dir ./migrations
+migratex down all --dsn "$DB_DSN" --dir ./migrations
 
 # Baseline existing database
-migrate force 20250101000000 --dsn "$DB_DSN" --dir ./migrations
+migratex force 20250101000000 --dsn "$DB_DSN" --dir ./migrations
 ```
 
 ## Library Usage
@@ -307,22 +307,22 @@ COMMIT;
 ### 3. Test Your Migrations
 ```bash
 # Test forward migration
-migrate up --dsn "$DB_DSN" --dir ./migrations
+migratex up --dsn "$DB_DSN" --dir ./migrations
 
 # Test rollback
-migrate down 1 --dsn "$DB_DSN" --dir ./migrations
+migratex down 1 --dsn "$DB_DSN" --dir ./migrations
 
 # Test forward again
-migrate up --dsn "$DB_DSN" --dir ./migrations
+migratex up --dsn "$DB_DSN" --dir ./migrations
 ```
 
 ### 4. Use Descriptive Names
 ```bash
 # Good
-migrate create add_user_email_index
+migratex create add_user_email_index
 
 # Avoid
-migrate create migration_001
+migratex create migration_001
 ```
 
 ### 5. Handle Data Migrations Carefully
@@ -377,7 +377,7 @@ go mod edit -require=github.com/mirajehossain/gomigratex@v1.2.0
 ### Checking Your Version
 
 ```bash
-migrate version
+migratex version
 ```
 
 This will show:
@@ -411,7 +411,7 @@ json: true
 
 Use with:
 ```bash
-migrate up --config migrate.yaml
+migratex up --config migrate.yaml
 ```
 
 ## Troubleshooting
@@ -428,7 +428,7 @@ Solution: Add `multiStatements=true` to your DSN.
 ```
 Error: checksum drift detected: 20250101120000:add_users_table
 ```
-Solution: Use `migrate repair` after intentional file edits.
+Solution: Use `migratex repair` after intentional file edits.
 
 **3. Lock timeout**
 ```
@@ -446,7 +446,7 @@ Solution: Create the corresponding `.down.sql` file.
 
 Use `--verbose` for detailed logging:
 ```bash
-migrate up --dsn "$DB_DSN" --dir ./migrations --verbose
+migratex up --dsn "$DB_DSN" --dir ./migrations --verbose
 ```
 
 ## Contributing
@@ -475,7 +475,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 
 4. **Build the CLI**
    ```bash
-   go build -o migrate ./cmd/migrate
+   go build -o migratex ./cmd/migrate
    ```
 
 ### Project Structure
@@ -568,13 +568,13 @@ DB_DSN="user:pass@tcp(localhost:3306)/testdb" go test -tags=integration ./...
    ```bash
    # Test installation from the new tag
    go install github.com/mirajehossain/gomigratex/cmd/migrate@v1.2.0
-   migrate version
+   migratex version
    ```
 
 4. **GitHub Release** (Manual)
    - Go to [GitHub Releases](https://github.com/mirajehossain/gomigratex/releases)
    - Create a new release from the tag
-   - Upload the built binaries (`migrate-linux`, `migrate-darwin`, `migrate-windows.exe`)
+   - Upload the built binaries (`migratex-linux`, `migratex-darwin`, `migratex-windows.exe`)
    - Write release notes describing changes
 
 **Version Numbering:**

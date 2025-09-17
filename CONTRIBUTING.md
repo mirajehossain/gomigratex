@@ -86,11 +86,11 @@ go test -cover ./...
 
 ```bash
 # Build the CLI
-go build -o migrate ./cmd/migrate
+go build -o migratex ./cmd/migrate
 
 # Test with sample migrations
-./migrate create test_migration --dir ./test-migrations
-./migrate status --dsn "test:test@tcp(localhost:3306)/testdb" --dir ./test-migrations --dry-run
+./migratex create test_migration --dir ./test-migrations
+./migratex status --dsn "test:test@tcp(localhost:3306)/testdb" --dir ./test-migrations --dry-run
 ```
 
 ## Testing

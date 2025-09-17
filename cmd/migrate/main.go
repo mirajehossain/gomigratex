@@ -360,7 +360,7 @@ func usage() {
 	fmt.Println(`gomigratex - Go migration CLI
 
 USAGE:
-  migrate <command> [args] [--flags]
+  migratex <command> [args] [--flags]
 
 COMMANDS:
   up                        Apply all pending migrations
@@ -382,12 +382,12 @@ GLOBAL FLAGS:
   --verbose       	    Verbose per-migration logs
 
 EXAMPLES:
-  migrate up --dsn "$DSN" --dir ./migrations
-  migrate down 1 --dsn "$DSN" --dir ./migrations
-  migrate status --dsn "$DSN" --dir ./migrations --json
-  migrate create add_user_table --dir ./migrations
-  migrate repair --dsn "$DSN" --dir ./migrations --yes
-  migrate force 20250825010101 --dsn "$DSN" --dir ./migrations --fake`)
+  migratex up --dsn "$DSN" --dir ./migrations
+  migratex down 1 --dsn "$DSN" --dir ./migrations
+  migratex status --dsn "$DSN" --dir ./migrations --json
+  migratex create add_user_table --dir ./migrations
+  migratex repair --dsn "$DSN" --dir ./migrations --yes
+  migratex force 20250825010101 --dsn "$DSN" --dir ./migrations --fake`)
 }
 
 func hasFlag(name string) bool {
